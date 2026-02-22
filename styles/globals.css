@@ -211,5 +211,68 @@ h1 {
   }
 }
 
+/* =========================
+   Mobile / Responsive
+   вставь в конец globals.css
+   ========================= */
+
+@media (max-width: 900px) {
+  /* контейнер меньше по бокам */
+  .container {
+    padding: 2rem 1.25rem;
+  }
+
+  /* hero становится в одну колонку */
+  .hero {
+    grid-template-columns: 1fr !important;
+    gap: 1.75rem !important;
+    justify-content: start !important;
+    min-height: auto !important;
+  }
+
+  /* правый блок (график) не фиксируем по ширине */
+  .rightCol {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* заголовок меньше, чтобы не ломал экран */
+  h1 {
+    font-size: clamp(2.2rem, 9vw, 3.1rem);
+    line-height: 1.05;
+  }
+
+  /* подпись под именем */
+  .sub {
+    font-size: 0.95rem;
+    opacity: 0.9;
+  }
+
+  /* меню Library/CV чуть компактнее */
+  .sideMenu a {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .container {
+    padding: 1.6rem 1rem;
+  }
+
+  /* на очень узких экранах можно разрешить перенос имени,
+     иначе будет горизонтальный скролл */
+  .noWrap {
+    white-space: normal !important;
+  }
+
+  .sideMenu {
+    gap: 0.7rem;
+  }
+
+  .sideMenu a {
+    font-size: 1.15rem;
+  }
+}
+
 
 
