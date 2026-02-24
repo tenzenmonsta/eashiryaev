@@ -14,9 +14,16 @@ export const libraryItems: LibraryItem[] = [
     date: "2026-01-29",
     tags: ["quant", "derivatives", "stochastic calculus"],
     description:
-      "Короткая заметка: портфель с хеджированием, лемма Ито, устранение стохастической части и получение PDE Блэка–Шоулза.",
-    href: "/Black_Scholes_Merton.pdf"
-
-
+      "Портфель с хеджированием, лемма Ито, устранение стохастической части и получение PDE Блэка–Шоулза.",
+    href: "/Black_Scholes_Merton.pdf",
+  },
+  {
+    slug: "strategy-overview",
+    title: "Обзор стратегии",
+    date: "2026-02-24",
+    tags: ["quant", "strategy", "research"],
+    description:
+      "Краткий обзор стратегии: данные → сигнал → cross-validation → бэктест → метрики. PDF + Jupyter notebook.",
+    href: "/library/strategy-overview",
   },
 ];

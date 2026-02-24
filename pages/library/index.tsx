@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { libraryItems } from "../data/library";
+import { libraryItems } from "../../data/library";
 
 export default function Library() {
   return (

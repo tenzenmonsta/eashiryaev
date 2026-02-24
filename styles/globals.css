@@ -274,5 +274,115 @@ h1 {
   }
 }
 
+/* ========== Responsive layout ========== */
+
+/* чтобы ширина считалась адекватно на мобиле */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ограничиваем контейнер и даем нормальные отступы */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+/* десктоп: текст слева, график справа */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  align-items: center;
+  gap: 48px;
+  min-height: 85vh;
+}
+
+/* чтобы имя не разрывало макет */
+.hero h1 {
+  margin: 0;
+  line-height: 1.02;
+}
+
+/* подпись под именем */
+.sub {
+  margin-top: 18px;
+  opacity: 0.85;
+}
+
+/* меню > Library > CV */
+.sideMenu {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 22px; /* “как у Глеба” — крупнее */
+  font-weight: 700;
+}
+
+.sideMenu a {
+  text-decoration: none;
+}
+
+/* блок с графиком: чтобы не вылезал */
+.chartCard,
+.chart,
+.chartWrap {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* если у графика есть canvas/svg — заставляем растягиваться */
+.chartCard canvas,
+.chartCard svg {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 900px) {
+  .container {
+    padding: 28px 18px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    min-height: auto;
+  }
+
+  /* график на мобиле лучше вниз */
+  .hero > :last-child {
+    order: 2;
+  }
+  .hero > :first-child {
+    order: 1;
+  }
+
+  /* чтобы заголовок не был гигантским на телефоне */
+  .hero h1 {
+    font-size: clamp(44px, 9vw, 72px);
+  }
+
+  .sub {
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  .sideMenu {
+    font-size: 18px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 42px;
+  }
+}
+
 
 
