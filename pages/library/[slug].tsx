@@ -65,7 +65,7 @@ export default function LibrarySlugPage() {
               target="_blank"
               rel="noreferrer"
               style={{
-                padding: "10px 14px",
+                padding: "11px 14px",
                 borderRadius: "999px",
                 border: "1px solid rgba(255,255,255,0.15)",
                 color: "#fff",
