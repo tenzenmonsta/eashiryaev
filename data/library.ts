@@ -24,6 +24,6 @@ export const libraryItems: LibraryItem[] = [
     tags: ["quant", "strategy", "research"],
     description:
       "Краткий обзор стратегии: данные → сигнал → cross-validation → бэктест → метрики. PDF + Jupyter notebook.",
-    href: "/library/strategy-overview",
+    href: "/quant_end-to_end.pdf",
   },
 ];
