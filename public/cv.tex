@@ -1,0 +1,152 @@
+\documentclass[10pt]{article}
+
+% ---------- Page ----------
+\usepackage[a4paper, left=1.35cm, right=1.35cm, top=1.15cm, bottom=1.25cm]{geometry}
+\pagenumbering{gobble}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\usepackage{fontawesome5}
+
+
+% ---------- Font / symbols ----------
+\usepackage[T1]{fontenc}
+\usepackage{charter} % очень похоже по ощущению на референс
+\usepackage{microtype}
+
+% ---------- Links ----------
+\usepackage[colorlinks=true, urlcolor=blue, linkcolor=black]{hyperref}
+
+
+% ---------- Layout ----------
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+% ---------- Lists ----------
+\setlist[itemize]{leftmargin=1.2em, itemsep=2pt, topsep=2pt}
+\renewcommand\labelitemi{\raisebox{0.2ex}{\tiny$\circ$}} % кружок как в рефе
+
+% ---------- Section styling ----------
+\titleformat{\section}{\scshape\large}{}{0pt}{}[\vspace{-2pt}\hrule]
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+% ---------- Small helpers ----------
+\newcommand{\smallit}[1]{{\small\textit{#1}}}
+\newcommand{\sep}{\hspace{10pt}\textbullet\hspace{10pt}}
+
+% row: left title + right (location/date)
+\newcommand{\rrow}[2]{%
+  \begin{tabularx}{\textwidth}{@{}X r@{}}%
+    #1 & #2\\%
+  \end{tabularx}%
+}
+
+% role line: left role + right date range italic
+\newcommand{\rrole}[2]{%
+  \rrow{{\small #1}}{{\smallit{#2}}}%
+}
+
+\begin{document}
+
+% ---------- Header block (1:1 layout) ----------
+% left contacts | centered name+location | right contacts
+% ---------- Header block (1:1 layout) ----------
+% left contacts | centered name+location | right contacts
+\begin{tabularx}{\textwidth}{@{}X c X@{}}
+\begin{minipage}[t]{0.33\textwidth}
+{\small
+{\small
+{\small
+\faEnvelope\ \href{mailto:egorsar2013@mail.ru}{egorsar2013@mail.ru}\\
+\faGithub\ \href{https://github.com/tenzenmonsta}{github.com/tenzenmonsta}
+}
+}
+}
+\end{minipage}
+&
+\begin{minipage}[t]{0.34\textwidth}
+\centering
+{\Huge \textsc{Egor Shiryaev}}\\
+{\small Moscow, Russia}
+\end{minipage}
+&
+\begin{minipage}[t]{0.33\textwidth}
+\raggedleft
+{\small
+{\small
+\faTelegram\ \href{https://t.me/eashiryaev}{t.me/eashiryaev}
+}
+}
+\end{minipage}
+\end{tabularx}
+
+\vspace{6pt}
+% ---------- Summary ----------
+\section*{Summary}
+\textbf{Junior Quant} Junior Quantitative Researcher with strong interest in statistical modeling, time series analysis, and systematic trading strategies. Focused on quantitative research workflows, factor modeling, and development of robust backtesting and market data analysis tools.
+
+
+% ---------- Experience ----------
+\section*{Experience}
+
+% --- Company
+\rrow{\textbf{GYI}}{Moscow, Russia}
+\rrole{Data Analyst}{October 2025 --- Present}
+\begin{itemize}
+  \item Collected, cleaned, and structured large-scale financial and transaction datasets for internal analytics.
+  \item Analyzed incoming payment flows to identify patterns, anomalies, and key revenue drivers.
+  \item Built analytical reports and dashboards supporting operational and financial decision-making.
+  \item Assisted in budget planning and forecasting based on historical transaction data and trend analysis.
+\end{itemize}
+
+
+
+
+% ---------- Education ----------
+\section*{Education}
+
+\rrow{\textbf{Bauman Moscow State Technical University}}{Moscow, Russia}
+\rrole{B.Sc. in Robotics and Mechanical Engineering (SM-9)}{2020 --- 2025}
+\begin{itemize}
+  \item Engineering and mathematical training with focus on modeling, control systems, and data analysis.
+  \item Relevant coursework: Higher Mathematics, Probability Theory, Linear Algebra, Mechanics, Algorithms.
+\end{itemize}
+
+\section*{Additional Education}
+
+\rrow{\textbf{MSU–VTB Vega Institute}}{Moscow, Russia}
+\rrole{Advanced Program in Financial Mathematics}{2025 --- Present}
+\begin{itemize}
+  \item Coursework includes derivatives pricing, stochastic calculus, and quantitative risk modeling.
+  \item Studied Black--Scholes framework, Brownian motion, It\^o processes, and martingale methods.
+\end{itemize}
+
+\rrow{\textbf{Quantitative Research Course}}{Moscow, Russia}
+\rrole{\href{https://quant.courses/}{quant.courses}}{Oct 2025 -- Dec 2025}
+\begin{itemize}
+  \item Training in quantitative research and systematic trading fundamentals.
+  \item Strategy development workflow: data preparation, hypothesis testing, validation.
+  \item Implemented educational trading strategy with backtesting and cross-validation.
+\end{itemize}
+
+\rrow{\textbf{Moscow Automobile and Road Construction State Technical University (MADI)}}{Moscow, Russia}
+\rrole{Engineering Studies}{2025 --- Present}
+\begin{itemize}
+  \item Faculty of Road and Technological Machines.
+  \item Coursework includes mathematics, mechanics, and engineering systems.
+\end{itemize}
+
+
+
+% ---------- Skills ----------
+\section*{Skills}
+
+\begin{itemize}
+\item \textbf{Languages:} Python, C++
+\item \textbf{Data Analysis:} Polars, Pandas, NumPy, Scikit-learn, Matplotlib, PyTorch
+\item \textbf{Quant Tools:} Backtesting, Time Series Analysis, Data Processing
+
+\end{itemize}
+
+\end{document}
