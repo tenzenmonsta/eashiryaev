@@ -26,4 +26,14 @@ export const libraryItems: LibraryItem[] = [
       "Краткий обзор стратегии: данные → сигнал → cross-validation → бэктест → метрики. PDF + Jupyter notebook.",
     href: "/quant_end-to_end.pdf",
   },
+
+  {
+  slug: "volatility-surface",
+  title: "Volatility Surface Builder",
+  date: "2026-03-23",
+  tags: ["quant", "options", "volatility", "plotly"],
+  description:
+    "Builds a cleaned implied volatility surface from option chain data, recovers forward prices via put-call parity, and visualizes the forward-normalized surface interactively.",
+  href: "/library/volatility-surface",
+},
 ];

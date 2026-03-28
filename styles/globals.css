@@ -383,6 +383,195 @@ h1 {
     font-size: 42px;
   }
 }
+.surfaceCard {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: rgba(255,255,255,0.03);
+}
 
+.surfaceToolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
 
+.surfaceInputWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 220px;
+}
 
+.surfaceLabel {
+  color: #bdbdbd;
+  font-size: 0.92rem;
+}
+
+.surfaceInput {
+  background: #111217;
+  color: #f2f2f2;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  font-size: 1rem;
+  outline: none;
+}
+
+.surfaceInput:focus {
+  border-color: rgba(255,255,255,0.28);
+}
+
+.surfaceButton {
+  background: #f2f2f2;
+  color: #111217;
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem 1.15rem;
+  font-size: 0.98rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.surfaceButtonSecondary {
+  background: transparent;
+  color: #f2f2f2;
+  border: 1px solid rgba(255,255,255,0.16);
+}
+
+.surfaceButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.surfacePlaceholder {
+  margin-top: 1rem;
+  color: #bdbdbd;
+}
+
+.surfaceError {
+  margin-top: 1rem;
+  color: #ffb4b4;
+  border: 1px solid rgba(255,120,120,0.18);
+  background: rgba(255,120,120,0.06);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+
+.surfaceMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.surfaceMetaChip {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  color: #d7d7d7;
+  font-size: 0.92rem;
+}
+
+.surfaceSliderCard {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.025);
+  padding: 1rem;
+}
+
+.surfaceSliderHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.surfaceSliderTitle {
+  font-size: 1rem;
+  font-weight: 650;
+  color: #f2f2f2;
+  margin-bottom: 0.25rem;
+}
+
+.surfaceSliderHint {
+  color: #bdbdbd;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.surfaceSliderValue {
+  color: #ffffff;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.surfaceSliderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.surfaceRange {
+  width: 100%;
+  accent-color: #8bd3ff;
+}
+
+.surfaceSliderScale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  color: #9ea4b0;
+  font-size: 0.82rem;
+}
+
+.surfaceCharts {
+  display: grid;
+  gap: 1rem;
+}
+
+.surfaceSectionBlock {
+  margin-top: 1.25rem;
+  margin-bottom: 0.9rem;
+}
+
+.surfaceSectionTitle {
+  font-size: 1rem;
+  font-weight: 650;
+  color: #f2f2f2;
+  margin-bottom: 0.3rem;
+}
+
+.surfaceSectionHint {
+  color: #bdbdbd;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.surfaceDerivativesGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.surfaceChartPanel {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.02);
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .surfaceSliderHeader {
+    flex-direction: column;
+  }
+
+  .surfaceSliderValue {
+    white-space: normal;
+  }
+}
