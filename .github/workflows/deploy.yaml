@@ -18,6 +18,9 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Add local env for build
+        run: echo "NEXT_PUBLIC_VOL_SURFACE_API=${{ vars.BACKEND_DOMAIN_NAME }}" > .env.local
+
       - name: Install dependencies
         run: npm i
 
