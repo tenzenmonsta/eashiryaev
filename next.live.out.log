@@ -6,7 +6,5 @@
    - Local:        http://localhost:3000
    - Environments: .env.local
 
- ✓ Ready in 5.5s
- ○ Compiling / ...
-   Reload env: .env.local
-   Reload env: .env.local
+ ✓ Ready in 5.1s
+ ○ Compiling /library ...

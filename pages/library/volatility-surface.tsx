@@ -75,9 +75,50 @@ declare global {
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_VOL_SURFACE_API || "http://127.0.0.1:8000";
+const OCEAN_DIVERGING_SCALE: Array<[number, string]> = [
+  [0, "#08244b"],
+  [0.2, "#0d5c87"],
+  [0.4, "#2aa7b8"],
+  [0.5, "#d8f3f8"],
+  [0.6, "#7fd3d8"],
+  [0.8, "#1b7fa8"],
+  [1, "#0a2f5a"],
+];
+
+function isFiniteNumber(value: number | null): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function getUniqueFiniteCount(grid: number[][]): number {
+  return new Set(grid.flat().filter((value) => Number.isFinite(value))).size;
+}
+
+function canRenderSurfaceGrid(grid: SurfaceGrid): boolean {
+  const rowCount = grid.z.length;
+  const columnCount = grid.z[0]?.length ?? 0;
+
+  if (rowCount < 2 || columnCount < 2) {
+    return false;
+  }
+
+  const finiteValues = grid.z.flat().filter(isFiniteNumber);
+  if (finiteValues.length < 4) {
+    return false;
+  }
+
+  return getUniqueFiniteCount(grid.x) >= 2 && getUniqueFiniteCount(grid.y) >= 2;
+}
+
+function sanitizeGrid(grid: SurfaceGrid): SurfaceGrid {
+  return {
+    x: grid.x.map((row) => row.map((value) => (Number.isFinite(value) ? value : 0))),
+    y: grid.y.map((row) => row.map((value) => (Number.isFinite(value) ? value : 0))),
+    z: grid.z.map((row) => row.map((value) => (isFiniteNumber(value) ? value : null))),
+  };
+}
 
 function getAbsMax(grid: SurfaceGrid): number {
-  const values = grid.z.flat().filter((value): value is number => value !== null);
+  const values = grid.z.flat().filter(isFiniteNumber);
   if (!values.length) {
     return 1;
   }
@@ -91,7 +132,7 @@ function renderSurfaceChart(
   grid: SurfaceGrid,
   title: string,
   zTitle: string,
-  colorscale: string,
+  colorscale: string | Array<[number, string]>,
   options?: {
     points?: SurfacePoints;
     symmetric?: boolean;
@@ -102,24 +143,28 @@ function renderSurfaceChart(
     return;
   }
 
-  const traces: object[] = [
-    {
-      type: "surface",
-      x: grid.x,
-      y: grid.y,
-      z: grid.z,
-      colorscale,
-      showscale: true,
-      opacity: 0.96,
-      name: title,
-      ...(options?.symmetric
-        ? (() => {
-            const absMax = getAbsMax(grid);
-            return { cmin: -absMax, cmax: absMax };
-          })()
-        : {}),
-    },
-  ];
+  const safeGrid = sanitizeGrid(grid);
+  const canRenderSurface = canRenderSurfaceGrid(safeGrid);
+  const traces: object[] = canRenderSurface
+    ? [
+        {
+          type: "surface",
+          x: safeGrid.x,
+          y: safeGrid.y,
+          z: safeGrid.z,
+          colorscale,
+          showscale: true,
+          opacity: 0.96,
+          name: title,
+          ...(options?.symmetric
+            ? (() => {
+                const absMax = getAbsMax(safeGrid);
+                return { cmin: -absMax, cmax: absMax };
+              })()
+            : {}),
+        },
+      ]
+    : [];
 
   if (options?.points) {
     traces.push({
@@ -131,9 +176,9 @@ function renderSurfaceChart(
       marker: {
         size: 2,
         color: "#ffffff",
-        opacity: 0.42,
+          opacity: 0.42,
       },
-      name: "Raw points",
+      name: canRenderSurface ? "Raw points" : "Available points",
     });
   }
 
@@ -151,6 +196,22 @@ function renderSurfaceChart(
         text: title,
         font: { size: 16 },
       },
+      annotations: canRenderSurface
+        ? []
+        : [
+            {
+              text: options?.points
+                ? "Need at least 2 expiries to render a full 3D surface. Showing the available points for this frame."
+                : "Need at least 2 expiries before this 3D derivative surface can be rendered.",
+              x: 0.5,
+              y: 0.5,
+              xref: "paper",
+              yref: "paper",
+              showarrow: false,
+              font: { color: "#d7d7d7", size: 14 },
+              align: "center",
+            },
+          ],
       scene: {
         bgcolor: "#111217",
         xaxis: {
@@ -366,7 +427,7 @@ export default function VolatilitySurfacePage() {
         title: activeExpiry
           ? `${data?.symbol} IV Skew | expiry ${activeExpiry}`
           : `${data?.symbol} IV Skew`,
-        zTitle: "d(sigma) / d(k_fwd)",
+        zTitle: "∂σ / ∂k_fwd",
       },
       {
         ref: termRef,
@@ -374,7 +435,7 @@ export default function VolatilitySurfacePage() {
         title: activeExpiry
           ? `${data?.symbol} IV Term Structure | expiry ${activeExpiry}`
           : `${data?.symbol} IV Term Structure`,
-        zTitle: "d(sigma) / dT",
+        zTitle: "∂σ / ∂T",
       },
       {
         ref: curvatureRef,
@@ -382,7 +443,7 @@ export default function VolatilitySurfacePage() {
         title: activeExpiry
           ? `${data?.symbol} IV Curvature | expiry ${activeExpiry}`
           : `${data?.symbol} IV Curvature`,
-        zTitle: "d²(sigma) / d(k_fwd²)",
+        zTitle: "∂²σ / ∂k_fwd²",
       },
     ];
 
@@ -396,7 +457,7 @@ export default function VolatilitySurfacePage() {
         plot.grid,
         plot.title,
         plot.zTitle,
-        "RdBu",
+        OCEAN_DIVERGING_SCALE,
         { symmetric: true, height: 460 }
       );
     }
@@ -435,8 +496,8 @@ export default function VolatilitySurfacePage() {
 
         <h1 style={{ marginBottom: "0.6rem" }}>Volatility Surface Builder</h1>
         <p style={{ color: "#d7d7d7", lineHeight: 1.65, maxWidth: 920 }}>
-          Build the forward-normalized surface, move across expiries with a slider, inspect the
-          volatility smile, and monitor surface derivatives on the current coordinates `{`k_fwd, T`}`.
+          Build and explore the volatility surface for a selected ticker, then step through expiries
+          and watch how the shape evolves over time.
         </p>
 
         <div className="surfaceCard" style={{ marginTop: "1.5rem" }}>
@@ -560,8 +621,7 @@ export default function VolatilitySurfacePage() {
               <div className="surfaceSectionBlock">
                 <div className="surfaceSectionTitle">Surface Derivatives</div>
                 <div className="surfaceSectionHint">
-                  These derivative charts are computed on the current surface coordinates:
-                  ` k_fwd = ln(K/F) ` and ` T `.
+                  Additional charts showing how the volatility surface changes across strike and time.
                 </div>
               </div>
 
