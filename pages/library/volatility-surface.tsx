@@ -74,7 +74,7 @@ declare global {
   }
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_VOL_SURFACE_API || "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_VOL_SURFACE_API ?? "";
 const OCEAN_DIVERGING_SCALE: Array<[number, string]> = [
   [0, "#08244b"],
   [0.2, "#0d5c87"],
