@@ -36,23 +36,50 @@ jobs:
           strip_components: 1
           rm: true
 
-      - name: Copy nginx proxy setup script
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_USER_PASSWORD }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "scripts/setup_nginx_proxy.py"
-          target: "/root/"
-
       - name: Configure nginx proxy for VSB backend
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_USER_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            python3 /root/scripts/setup_nginx_proxy.py
+            cat > /tmp/vsb_nginx.py << 'PYEOF'
+            import os, subprocess, sys
+            MARKER = 'VSB_PROXY'
+            PROXY = """
+                # VSB_PROXY
+                location ~ ^/(surface|health) {
+                    proxy_pass http://157.22.195.189:8000;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_read_timeout 120;
+                }"""
+            def find_conf():
+                for pat in ['var/www/eashiryaev', 'eashiryaev']:
+                    r = subprocess.run(['grep', '-rl', pat, '/etc/nginx'], capture_output=True, text=True)
+                    lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+                    for l in lines:
+                        if any(d in l for d in ('sites-enabled', 'sites-available', 'conf.d')):
+                            return l
+                    if lines: return lines[0]
+                for d in ('/etc/nginx/sites-enabled', '/etc/nginx/conf.d'):
+                    if os.path.isdir(d):
+                        for f in sorted(os.listdir(d)):
+                            p = os.path.join(d, f)
+                            if os.path.isfile(p):
+                                try:
+                                    c = open(p).read()
+                                    if 'listen 80' in c or 'listen 443' in c: return p
+                                except: pass
+                return ''
+            conf = find_conf()
+            if not conf: print('nginx config not found'); sys.exit(1)
+            c = open(conf).read()
+            if MARKER in c: print('already configured: ' + conf); sys.exit(0)
+            idx = c.rfind('}')
+            open(conf, 'w').write(c[:idx] + PROXY + '\n' + c[idx:])
+            print('proxy added to ' + conf)
+            PYEOF
+            python3 /tmp/vsb_nginx.py
             nginx -t && systemctl reload nginx
