@@ -8,11 +8,11 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -24,7 +24,7 @@ jobs:
       - name: Build static site
         run: npm run build
 
-      - name: Deploy to server via SCP
+      - name: Deploy static files to server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -35,3 +35,24 @@ jobs:
           target: "/var/www/eashiryaev/"
           strip_components: 1
           rm: true
+
+      - name: Copy nginx proxy setup script
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_USER_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "scripts/setup_nginx_proxy.py"
+          target: "/root/"
+
+      - name: Configure nginx proxy for VSB backend
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_USER_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            python3 /root/scripts/setup_nginx_proxy.py
+            nginx -t && systemctl reload nginx
