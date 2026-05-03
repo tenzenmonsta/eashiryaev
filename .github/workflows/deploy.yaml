@@ -44,16 +44,19 @@ jobs:
           password: ${{ secrets.SERVER_USER_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            echo "=== connectivity test ===" && curl -sf --connect-timeout 10 http://157.22.195.189:8000/health && echo "VSB reachable" || echo "VSB UNREACHABLE"
             cat > /tmp/vsb_nginx.py << 'PYEOF'
-            import os, subprocess, sys
+            import os, subprocess, sys, re
             MARKER = 'VSB_PROXY'
-            PROXY = """
+            PROXY_BLOCK = """
                 # VSB_PROXY
                 location ~ ^/(surface|health) {
                     proxy_pass http://157.22.195.189:8000;
                     proxy_set_header Host $host;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_read_timeout 120;
+                    proxy_connect_timeout 30;
+                    proxy_send_timeout 60;
                 }"""
             def find_conf():
                 for pat in ['var/www/eashiryaev', 'eashiryaev']:
@@ -62,7 +65,8 @@ jobs:
                     for l in lines:
                         if any(d in l for d in ('sites-enabled', 'sites-available', 'conf.d')):
                             return l
-                    if lines: return lines[0]
+                    if lines:
+                        return lines[0]
                 for d in ('/etc/nginx/sites-enabled', '/etc/nginx/conf.d'):
                     if os.path.isdir(d):
                         for f in sorted(os.listdir(d)):
@@ -70,15 +74,21 @@ jobs:
                             if os.path.isfile(p):
                                 try:
                                     c = open(p).read()
-                                    if 'listen 80' in c or 'listen 443' in c: return p
-                                except: pass
+                                    if 'listen 80' in c or 'listen 443' in c:
+                                        return p
+                                except:
+                                    pass
                 return ''
             conf = find_conf()
-            if not conf: print('nginx config not found'); sys.exit(1)
+            if not conf:
+                print('nginx config not found')
+                sys.exit(1)
             c = open(conf).read()
-            if MARKER in c: print('already configured: ' + conf); sys.exit(0)
+            if MARKER in c:
+                c = re.sub(r'\n[ \t]*# VSB_PROXY.*?\}', '', c, flags=re.DOTALL)
+                print('removed old VSB_PROXY block from ' + conf)
             idx = c.rfind('}')
-            open(conf, 'w').write(c[:idx] + PROXY + '\n' + c[idx:])
+            open(conf, 'w').write(c[:idx] + PROXY_BLOCK + '\n' + c[idx:])
             print('proxy added to ' + conf)
             PYEOF
             python3 /tmp/vsb_nginx.py
