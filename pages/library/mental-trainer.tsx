@@ -1,53 +1,67 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Mode = "multiply" | "divide" | "weekday";
 
-type Question =
-  | { mode: "multiply"; a: number; b: number; answer: number }
-  | { mode: "divide"; dividend: number; divisor: number; answer: number }
-  | { mode: "weekday"; date: Date; answer: number };
+type MultiplyQ = { mode: "multiply"; a: number; b: number; answer: number };
+type DivideQ = { mode: "divide"; a: number; b: number; answer: number };
+type WeekdayQ = { mode: "weekday"; date: Date; answer: number };
+type Question = MultiplyQ | DivideQ | WeekdayQ;
 
-type Verdict = "idle" | "correct" | "wrong";
+type AnswerLog = {
+  question: Question;
+  given: string;
+  correct: boolean;
+};
 
-const WEEKDAYS_RU = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-const WEEKDAYS_RU_FULL = [
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-  "Воскресенье",
+type Phase = "setup" | "running" | "finished";
+
+const ROUND_DECIMALS = 5;
+const ROUND_TOLERANCE = 0.5 / 10 ** ROUND_DECIMALS;
+const DRILL_SECONDS = 60;
+
+const WEEKDAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS_LONG = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ];
-const MONTHS_RU = [
-  "января", "февраля", "марта", "апреля", "мая", "июня",
-  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+const MONTHS_EN = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
+
+const MODE_META: Record<Mode, { label: string; hint: string }> = {
+  multiply: { label: "× Multiplication", hint: "1–100 × 1–100" },
+  divide: {
+    label: "÷ Division",
+    hint: "1–1000 ÷ 1–1000 (answer to 5 decimals)",
+  },
+  weekday: { label: "📅 Weekday", hint: "name the day of a random date" },
+};
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function makeMultiply(): Question {
+function makeMultiply(): MultiplyQ {
   const a = randInt(1, 100);
   const b = randInt(1, 100);
   return { mode: "multiply", a, b, answer: a * b };
 }
 
-function makeDivide(): Question {
-  // Pick divisor and integer quotient so dividend is in [1, 1000] and result is integer.
-  const divisor = randInt(2, 100);
-  const maxQuotient = Math.max(1, Math.floor(1000 / divisor));
-  const quotient = randInt(1, Math.min(100, maxQuotient));
-  const dividend = divisor * quotient;
-  return { mode: "divide", dividend, divisor, answer: quotient };
+function makeDivide(): DivideQ {
+  const a = randInt(1, 1000);
+  const b = randInt(1, 1000);
+  return { mode: "divide", a, b, answer: a / b };
 }
 
-function makeWeekday(): Question {
-  // Random date in [1925, 2075]. JS Date.getDay(): 0=Sun, 1=Mon ... 6=Sat.
-  // We use 0=Mon ... 6=Sun internally to match WEEKDAYS_RU order.
+function makeWeekday(): WeekdayQ {
   const year = randInt(1925, 2075);
   const month = randInt(0, 11);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -58,113 +72,151 @@ function makeWeekday(): Question {
   return { mode: "weekday", date, answer };
 }
 
-function makeQuestion(mode: Mode): Question {
-  if (mode === "multiply") return makeMultiply();
-  if (mode === "divide") return makeDivide();
+function makeQuestion(modes: Mode[]): Question {
+  const pick = modes[randInt(0, modes.length - 1)];
+  if (pick === "multiply") return makeMultiply();
+  if (pick === "divide") return makeDivide();
   return makeWeekday();
 }
 
 function formatDate(d: Date): string {
-  return `${d.getDate()} ${MONTHS_RU[d.getMonth()]} ${d.getFullYear()}`;
+  return `${MONTHS_EN[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function formatPrompt(q: Question): string {
+  if (q.mode === "multiply") return `${q.a} × ${q.b}`;
+  if (q.mode === "divide") return `${q.a} ÷ ${q.b}`;
+  return formatDate(q.date);
+}
+
+function formatAnswer(q: Question): string {
+  if (q.mode === "weekday") return WEEKDAYS_LONG[q.answer];
+  if (q.mode === "divide") return q.answer.toFixed(ROUND_DECIMALS);
+  return String(q.answer);
+}
+
+function checkNumeric(q: MultiplyQ | DivideQ, raw: string): boolean {
+  const cleaned = raw.trim().replace(",", ".");
+  if (cleaned === "") return false;
+  const parsed = Number(cleaned);
+  if (!Number.isFinite(parsed)) return false;
+  if (q.mode === "multiply") return parsed === q.answer;
+  return Math.abs(parsed - q.answer) <= ROUND_TOLERANCE;
 }
 
 export default function MentalTrainer() {
-  const [mode, setMode] = useState<Mode>("multiply");
-  const [question, setQuestion] = useState<Question>(() => makeQuestion("multiply"));
+  const [phase, setPhase] = useState<Phase>("setup");
+  const [selected, setSelected] = useState<Record<Mode, boolean>>({
+    multiply: true,
+    divide: false,
+    weekday: false,
+  });
+  const [question, setQuestion] = useState<Question | null>(null);
   const [input, setInput] = useState("");
-  const [verdict, setVerdict] = useState<Verdict>("idle");
-  const [correct, setCorrect] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [bestStreak, setBestStreak] = useState(0);
-  const [startedAt, setStartedAt] = useState<number>(() => Date.now());
-  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
+  const [log, setLog] = useState<AnswerLog[]>([]);
+  const [remainingMs, setRemainingMs] = useState<number>(DRILL_SECONDS * 1000);
+  const endsAtRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const selectedModes = useMemo(
+    () => (Object.keys(selected) as Mode[]).filter((m) => selected[m]),
+    [selected]
+  );
 
-  useEffect(() => {
-    setQuestion(makeQuestion(mode));
+  const canStart = selectedModes.length > 0;
+
+  const correctCount = useMemo(
+    () => log.filter((entry) => entry.correct).length,
+    [log]
+  );
+  const totalCount = log.length;
+  const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+
+  const finish = useCallback(() => {
+    setPhase("finished");
+    setQuestion(null);
     setInput("");
-    setVerdict("idle");
-    setElapsedMs(null);
-    setStartedAt(Date.now());
-  }, [mode]);
+    setRemainingMs(0);
+  }, []);
 
   useEffect(() => {
-    if (verdict === "idle" && mode !== "weekday") {
+    if (phase !== "running") return;
+    const tick = () => {
+      const left = endsAtRef.current - Date.now();
+      if (left <= 0) {
+        setRemainingMs(0);
+        finish();
+        return;
+      }
+      setRemainingMs(left);
+    };
+    tick();
+    const id = window.setInterval(tick, 100);
+    return () => window.clearInterval(id);
+  }, [phase, finish]);
+
+  useEffect(() => {
+    if (phase === "running" && question && question.mode !== "weekday") {
       inputRef.current?.focus();
     }
-  }, [verdict, mode, question]);
+  }, [phase, question]);
 
-  function next() {
-    setQuestion(makeQuestion(mode));
+  function startDrill() {
+    if (!canStart) return;
+    endsAtRef.current = Date.now() + DRILL_SECONDS * 1000;
+    setRemainingMs(DRILL_SECONDS * 1000);
+    setLog([]);
     setInput("");
-    setVerdict("idle");
-    setElapsedMs(null);
-    setStartedAt(Date.now());
+    setQuestion(makeQuestion(selectedModes));
+    setPhase("running");
   }
 
-  function commit(value: number) {
-    if (verdict !== "idle") {
+  function backToSetup() {
+    setPhase("setup");
+    setQuestion(null);
+    setInput("");
+    setLog([]);
+    setRemainingMs(DRILL_SECONDS * 1000);
+  }
+
+  function recordAnswer(q: Question, given: string, correct: boolean) {
+    setLog((prev) => [...prev, { question: q, given, correct }]);
+    if (Date.now() >= endsAtRef.current) {
+      finish();
       return;
     }
-    const isCorrect = value === question.answer;
-    setVerdict(isCorrect ? "correct" : "wrong");
-    setTotal((t) => t + 1);
-    setElapsedMs(Date.now() - startedAt);
-    if (isCorrect) {
-      setCorrect((c) => c + 1);
-      setStreak((s) => {
-        const ns = s + 1;
-        setBestStreak((b) => (ns > b ? ns : b));
-        return ns;
-      });
-    } else {
-      setStreak(0);
-    }
+    setQuestion(makeQuestion(selectedModes));
+    setInput("");
   }
 
   function handleNumericSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (verdict !== "idle") {
-      next();
-      return;
-    }
-    if (input.trim() === "") {
-      return;
-    }
-    const parsed = Number(input.trim());
-    if (!Number.isFinite(parsed)) {
-      return;
-    }
-    commit(parsed);
+    if (phase !== "running" || !question) return;
+    if (question.mode === "weekday") return;
+    if (input.trim() === "") return;
+    const isCorrect = checkNumeric(question, input);
+    recordAnswer(question, input.trim(), isCorrect);
   }
 
-  function resetStats() {
-    setCorrect(0);
-    setTotal(0);
-    setStreak(0);
-    setBestStreak(0);
-    next();
+  function handleWeekdayPick(idx: number) {
+    if (phase !== "running" || !question || question.mode !== "weekday") return;
+    const isCorrect = idx === question.answer;
+    recordAnswer(question, WEEKDAYS_LONG[idx], isCorrect);
   }
 
-  const prompt = useMemo(() => {
-    if (question.mode === "multiply") {
-      return `${question.a} × ${question.b}`;
-    }
-    if (question.mode === "divide") {
-      return `${question.dividend} ÷ ${question.divisor}`;
-    }
-    return formatDate(question.date);
-  }, [question]);
+  const seconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const mm = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const ss = (seconds % 60).toString().padStart(2, "0");
 
-  const correctAnswerLabel = useMemo(() => {
-    if (question.mode === "weekday") {
-      return WEEKDAYS_RU_FULL[question.answer];
-    }
-    return String(question.answer);
-  }, [question]);
+  const numericInputAttrs =
+    question?.mode === "divide"
+      ? { inputMode: "decimal" as const, pattern: "-?[0-9.,]*" }
+      : { inputMode: "numeric" as const, pattern: "-?[0-9]*" };
+
+  const numericInputFilter = (raw: string) =>
+    question?.mode === "divide"
+      ? raw.replace(/[^0-9.,\-]/g, "")
+      : raw.replace(/[^0-9-]/g, "");
 
   return (
     <>
@@ -172,7 +224,7 @@ export default function MentalTrainer() {
         <title>Mental Trainer</title>
         <meta
           name="description"
-          content="Тренажёр устного счёта: умножение, деление и определение дня недели по дате."
+          content="60-second mental math drill: multiplication, decimal division, and weekday-from-date."
         />
       </Head>
 
@@ -184,155 +236,271 @@ export default function MentalTrainer() {
         </div>
 
         <h1 style={{ marginBottom: "0.6rem" }}>Mental Trainer</h1>
-        <p style={{ color: "#d7d7d7", lineHeight: 1.65, maxWidth: 760 }}>
-          Три режима: умножение (1–100), деление с целым результатом (делимое до 1000)
-          и определение дня недели по дате. Жми <kbd>Enter</kbd>, чтобы ответить и перейти
-          к следующему вопросу.
-        </p>
 
         <div className="surfaceCard" style={{ marginTop: "1.5rem" }}>
-          <div className="trainerTabs" role="tablist">
-            {([
-              ["multiply", "× Умножение"],
-              ["divide", "÷ Деление"],
-              ["weekday", "📅 День недели"],
-            ] as const).map(([key, label]) => (
+          {phase === "setup" && (
+            <>
+              <p style={{ color: "#d7d7d7", lineHeight: 1.6, marginTop: 0 }}>
+                Pick what to practice and start. You have <strong>60 seconds</strong> to
+                solve as many questions as possible.
+              </p>
+
+              <div className="trainerOptionList">
+                {(Object.keys(MODE_META) as Mode[]).map((m) => {
+                  const isOn = selected[m];
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-pressed={isOn}
+                      className={`trainerOption ${isOn ? "trainerOptionOn" : ""}`}
+                      onClick={() =>
+                        setSelected((prev) => ({ ...prev, [m]: !prev[m] }))
+                      }
+                    >
+                      <span className="trainerOptionLabel">{MODE_META[m].label}</span>
+                      <span className="trainerOptionHint">{MODE_META[m].hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <button
-                key={key}
                 type="button"
-                role="tab"
-                aria-selected={mode === key}
-                className={`trainerTab ${mode === key ? "trainerTabActive" : ""}`}
-                onClick={() => setMode(key)}
+                className="surfaceButton trainerStartButton"
+                onClick={startDrill}
+                disabled={!canStart}
               >
-                {label}
+                Start 60-second drill
               </button>
-            ))}
-          </div>
 
-          <div className="surfaceMetaRow" style={{ marginTop: "1.2rem" }}>
-            <div className="surfaceMetaChip">верно: <strong>{correct}</strong> / {total}</div>
-            <div className="surfaceMetaChip">точность: <strong>{accuracy}%</strong></div>
-            <div className="surfaceMetaChip">серия: <strong>{streak}</strong></div>
-            <div className="surfaceMetaChip">рекорд: <strong>{bestStreak}</strong></div>
-            <button
-              type="button"
-              className="surfaceButton surfaceButtonSecondary"
-              onClick={resetStats}
-              style={{ padding: "0.45rem 0.85rem", fontSize: "0.9rem" }}
-            >
-              Сбросить
-            </button>
-          </div>
-
-          <div className="trainerPrompt">{prompt}</div>
-
-          {question.mode === "weekday" ? (
-            <div className="trainerWeekdayGrid">
-              {WEEKDAYS_RU.map((label, idx) => {
-                const isAnswer = idx === question.answer;
-                const isPicked = verdict !== "idle" && input === String(idx);
-                const cls = [
-                  "trainerWeekdayButton",
-                  verdict !== "idle" && isAnswer ? "trainerWeekdayCorrect" : "",
-                  verdict === "wrong" && isPicked && !isAnswer ? "trainerWeekdayWrong" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    className={cls}
-                    disabled={verdict !== "idle"}
-                    onClick={() => {
-                      setInput(String(idx));
-                      commit(idx);
-                    }}
-                  >
-                    <div className="trainerWeekdayShort">{label}</div>
-                    <div className="trainerWeekdayLong">{WEEKDAYS_RU_FULL[idx]}</div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <form onSubmit={handleNumericSubmit} className="trainerForm">
-              <input
-                ref={inputRef}
-                type="text"
-                inputMode="numeric"
-                pattern="-?[0-9]*"
-                className="surfaceInput trainerInput"
-                value={input}
-                onChange={(e) => setInput(e.target.value.replace(/[^0-9-]/g, ""))}
-                placeholder="ответ"
-                autoFocus
-                disabled={verdict !== "idle"}
-              />
-              <button type="submit" className="surfaceButton">
-                {verdict === "idle" ? "Ответить" : "Дальше"}
-              </button>
-            </form>
+              {!canStart && (
+                <div className="trainerHelpText">Select at least one mode.</div>
+              )}
+            </>
           )}
 
-          {verdict !== "idle" && (
-            <div
-              className={`trainerVerdict ${
-                verdict === "correct" ? "trainerVerdictOk" : "trainerVerdictBad"
-              }`}
-            >
-              {verdict === "correct" ? (
-                <>
-                  Верно{elapsedMs !== null ? ` · ${(elapsedMs / 1000).toFixed(1)} c` : ""}.{" "}
-                  <button type="button" onClick={next} className="trainerLinkButton">
-                    Следующий →
-                  </button>
-                </>
+          {phase === "running" && question && (
+            <>
+              <div className="trainerHeader">
+                <div className="trainerTimer">
+                  {mm}:{ss}
+                </div>
+                <div className="trainerScore">
+                  Correct: <strong>{correctCount}</strong> · Answered: {totalCount}
+                </div>
+                <button
+                  type="button"
+                  className="surfaceButton surfaceButtonSecondary trainerSmallButton"
+                  onClick={finish}
+                >
+                  Stop
+                </button>
+              </div>
+
+              <div className="trainerModeTag">
+                {MODE_META[question.mode].label}
+              </div>
+
+              <div className="trainerPrompt">{formatPrompt(question)}</div>
+
+              {question.mode === "weekday" ? (
+                <div className="trainerWeekdayGrid">
+                  {WEEKDAYS_SHORT.map((label, idx) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className="trainerWeekdayButton"
+                      onClick={() => handleWeekdayPick(idx)}
+                    >
+                      <div className="trainerWeekdayShort">{label}</div>
+                      <div className="trainerWeekdayLong">{WEEKDAYS_LONG[idx]}</div>
+                    </button>
+                  ))}
+                </div>
               ) : (
-                <>
-                  Ответ: <strong>{correctAnswerLabel}</strong>.{" "}
-                  <button type="button" onClick={next} className="trainerLinkButton">
-                    Следующий →
+                <form onSubmit={handleNumericSubmit} className="trainerForm">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    {...numericInputAttrs}
+                    className="surfaceInput trainerInput"
+                    value={input}
+                    onChange={(e) => setInput(numericInputFilter(e.target.value))}
+                    placeholder={
+                      question.mode === "divide"
+                        ? "e.g. 1.23456"
+                        : "answer"
+                    }
+                    autoFocus
+                  />
+                  <button type="submit" className="surfaceButton">
+                    Submit
                   </button>
-                </>
+                </form>
               )}
-            </div>
+
+              {question.mode === "divide" && (
+                <div className="trainerHelpText">
+                  Accepted within 5-decimal precision (±0.000005).
+                </div>
+              )}
+            </>
+          )}
+
+          {phase === "finished" && (
+            <>
+              <div className="trainerFinishedTitle">Time&apos;s up</div>
+
+              <div className="surfaceMetaRow" style={{ marginTop: "0.6rem" }}>
+                <div className="surfaceMetaChip">
+                  correct: <strong>{correctCount}</strong>
+                </div>
+                <div className="surfaceMetaChip">
+                  answered: <strong>{totalCount}</strong>
+                </div>
+                <div className="surfaceMetaChip">
+                  accuracy: <strong>{accuracy}%</strong>
+                </div>
+                <div className="surfaceMetaChip">
+                  modes: <strong>{selectedModes.length}</strong>
+                </div>
+              </div>
+
+              <div className="trainerFinishedActions">
+                <button
+                  type="button"
+                  className="surfaceButton"
+                  onClick={startDrill}
+                  disabled={!canStart}
+                >
+                  Run again
+                </button>
+                <button
+                  type="button"
+                  className="surfaceButton surfaceButtonSecondary"
+                  onClick={backToSetup}
+                >
+                  Change modes
+                </button>
+              </div>
+
+              {log.length > 0 && (
+                <div className="trainerLogBlock">
+                  <div className="trainerLogTitle">Breakdown</div>
+                  <div className="trainerLogList">
+                    {log.map((entry, i) => (
+                      <div
+                        key={i}
+                        className={`trainerLogRow ${
+                          entry.correct ? "trainerLogOk" : "trainerLogBad"
+                        }`}
+                      >
+                        <span className="trainerLogPrompt">
+                          {formatPrompt(entry.question)}
+                        </span>
+                        <span className="trainerLogGiven">
+                          your: {entry.given || "—"}
+                        </span>
+                        {!entry.correct && (
+                          <span className="trainerLogTrue">
+                            correct: {formatAnswer(entry.question)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
 
       <style jsx>{`
-        .trainerTabs {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
+        .trainerOptionList {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 0.7rem;
+          margin: 1.2rem 0 1.4rem;
         }
-        .trainerTab {
-          background: transparent;
-          color: #d7d7d7;
+        .trainerOption {
+          background: #111217;
+          color: #f2f2f2;
           border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 12px;
-          padding: 0.6rem 0.95rem;
-          font-size: 0.98rem;
+          border-radius: 14px;
+          padding: 0.95rem 1rem;
+          text-align: left;
           cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+          transition: border-color 120ms, background 120ms;
         }
-        .trainerTab:hover {
-          border-color: rgba(255, 255, 255, 0.28);
+        .trainerOption:hover {
+          border-color: rgba(255, 255, 255, 0.3);
         }
-        .trainerTabActive {
-          background: #f2f2f2;
-          color: #111217;
+        .trainerOptionOn {
+          background: rgba(242, 242, 242, 0.12);
           border-color: #f2f2f2;
+        }
+        .trainerOptionLabel {
+          font-size: 1.05rem;
           font-weight: 650;
+        }
+        .trainerOptionHint {
+          font-size: 0.85rem;
+          color: #bdbdbd;
+        }
+        .trainerStartButton {
+          font-size: 1.05rem;
+          padding: 1rem 1.4rem;
+        }
+        .trainerHelpText {
+          color: #bdbdbd;
+          font-size: 0.88rem;
+          margin-top: 0.7rem;
+        }
+        .trainerHeader {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          margin-bottom: 0.5rem;
+        }
+        .trainerTimer {
+          font-variant-numeric: tabular-nums;
+          font-size: clamp(1.8rem, 4vw, 2.4rem);
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
+        .trainerScore {
+          color: #d7d7d7;
+          font-size: 0.98rem;
+        }
+        .trainerSmallButton {
+          padding: 0.5rem 0.9rem;
+          font-size: 0.9rem;
+        }
+        .trainerModeTag {
+          display: inline-block;
+          margin: 0.4rem 0 0;
+          padding: 0.3rem 0.7rem;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #d7d7d7;
+          font-size: 0.85rem;
         }
         .trainerPrompt {
           font-size: clamp(2.4rem, 7vw, 3.4rem);
           font-weight: 700;
           color: #f2f2f2;
           text-align: center;
-          padding: 1.6rem 0;
+          padding: 1.4rem 0 1.2rem;
           letter-spacing: 0.02em;
+          font-variant-numeric: tabular-nums;
         }
         .trainerForm {
           display: flex;
@@ -341,15 +509,16 @@ export default function MentalTrainer() {
           flex-wrap: wrap;
         }
         .trainerInput {
-          width: min(240px, 100%);
+          width: min(280px, 100%);
           font-size: 1.25rem;
           text-align: center;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.04em;
+          font-variant-numeric: tabular-nums;
         }
         .trainerWeekdayGrid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-          gap: 0.6rem;
+          gap: 0.55rem;
         }
         .trainerWeekdayButton {
           background: #111217;
@@ -361,11 +530,9 @@ export default function MentalTrainer() {
           text-align: center;
           transition: border-color 120ms, background 120ms;
         }
-        .trainerWeekdayButton:hover:not(:disabled) {
+        .trainerWeekdayButton:hover {
           border-color: rgba(255, 255, 255, 0.32);
-        }
-        .trainerWeekdayButton:disabled {
-          cursor: default;
+          background: rgba(255, 255, 255, 0.04);
         }
         .trainerWeekdayShort {
           font-size: 1.1rem;
@@ -376,47 +543,62 @@ export default function MentalTrainer() {
           color: #bdbdbd;
           margin-top: 0.15rem;
         }
-        .trainerWeekdayCorrect {
-          background: rgba(88, 214, 141, 0.16);
-          border-color: rgba(88, 214, 141, 0.55);
+        .trainerFinishedTitle {
+          font-size: 1.8rem;
+          font-weight: 700;
+          margin: 0.2rem 0 0.4rem;
         }
-        .trainerWeekdayWrong {
-          background: rgba(255, 120, 120, 0.14);
-          border-color: rgba(255, 120, 120, 0.5);
-        }
-        .trainerVerdict {
+        .trainerFinishedActions {
+          display: flex;
+          gap: 0.6rem;
           margin-top: 1rem;
-          border-radius: 12px;
-          padding: 0.9rem 1rem;
-          font-size: 1rem;
+          flex-wrap: wrap;
         }
-        .trainerVerdictOk {
-          color: #b9f0c8;
-          border: 1px solid rgba(88, 214, 141, 0.35);
-          background: rgba(88, 214, 141, 0.08);
+        .trainerLogBlock {
+          margin-top: 1.6rem;
         }
-        .trainerVerdictBad {
+        .trainerLogTitle {
+          color: #bdbdbd;
+          font-size: 0.9rem;
+          margin-bottom: 0.5rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .trainerLogList {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          max-height: 320px;
+          overflow-y: auto;
+          padding-right: 0.4rem;
+        }
+        .trainerLogRow {
+          display: flex;
+          gap: 0.9rem;
+          flex-wrap: wrap;
+          padding: 0.5rem 0.7rem;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          font-size: 0.92rem;
+          font-variant-numeric: tabular-nums;
+        }
+        .trainerLogOk {
+          border-color: rgba(88, 214, 141, 0.3);
+          background: rgba(88, 214, 141, 0.06);
+        }
+        .trainerLogBad {
+          border-color: rgba(255, 120, 120, 0.3);
+          background: rgba(255, 120, 120, 0.06);
+        }
+        .trainerLogPrompt {
+          font-weight: 650;
+          min-width: 160px;
+        }
+        .trainerLogGiven {
+          color: #d7d7d7;
+        }
+        .trainerLogTrue {
           color: #ffd0d0;
-          border: 1px solid rgba(255, 120, 120, 0.32);
-          background: rgba(255, 120, 120, 0.08);
-        }
-        .trainerLinkButton {
-          background: transparent;
-          border: none;
-          color: inherit;
-          font: inherit;
-          text-decoration: underline;
-          cursor: pointer;
-          padding: 0;
-          margin-left: 0.35rem;
-        }
-        kbd {
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-bottom-width: 2px;
-          border-radius: 6px;
-          padding: 0.05rem 0.4rem;
-          font-size: 0.85em;
         }
       `}</style>
     </>

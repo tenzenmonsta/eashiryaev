@@ -28,7 +28,9 @@ export default function Library() {
                 <div className="libraryLeft">
                   <div className="libraryTitle">{item.title}</div>
                   <div className="libraryMeta">{item.date}</div>
-                  <div className="libraryDesc">{item.description}</div>
+                  {item.description && (
+                    <div className="libraryDesc">{item.description}</div>
+                  )}
 
                   <div className="libraryTags">
                     {item.tags.map((t) => (

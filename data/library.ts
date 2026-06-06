@@ -41,8 +41,7 @@ export const libraryItems: LibraryItem[] = [
     title: "Mental Trainer",
     date: "2026-06-06",
     tags: ["trainer", "mental math", "interactive"],
-    description:
-      "Тренажёр устного счёта: умножение чисел 1–100, деление с целым результатом (делимое до 1000) и определение дня недели по случайной дате. Счёт ответов, серия, рекорд.",
+    description: "",
     href: "/library/mental-trainer",
   },
 ];
