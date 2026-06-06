@@ -36,9 +36,9 @@ type SmileSeries = {
 
 type SurfaceResponse = {
   symbol: string;
-  surface: SurfaceGrid;
-  points: SurfacePoints;
-  analytics: SurfaceAnalytics;
+  surface?: SurfaceGrid;
+  points?: SurfacePoints;
+  analytics?: SurfaceAnalytics;
   timeline: {
     expiries: string[];
     frames: TimelineFrame[];
@@ -256,23 +256,46 @@ export default function VolatilitySurfacePage() {
     setLoading(true);
     setError("");
 
+    const symbol = ticker.trim().toUpperCase();
+    if (!symbol) {
+      setError("Please enter a ticker symbol.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_BASE}/surface?symbol=${ticker.toUpperCase()}`);
-      const json = await res.json();
+      const res = await fetch(`${API_BASE}/surface?symbol=${encodeURIComponent(symbol)}`);
+      const rawText = await res.text();
+
+      let json: SurfaceResponse | { detail?: string } | null = null;
+      try {
+        json = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        json = null;
+      }
 
       if (!res.ok) {
+        const detail =
+          json && typeof (json as { detail?: unknown }).detail === "string"
+            ? (json as { detail: string }).detail
+            : rawText.slice(0, 200) || res.statusText || "Failed to build surface";
+        throw new Error(`Backend ${res.status}: ${detail}`);
+      }
+
+      if (!json || typeof json !== "object" || !("timeline" in json)) {
         throw new Error(
-          typeof json.detail === "string" ? json.detail : "Failed to build surface"
+          `Unexpected response from backend (no timeline). First 200 chars: ${rawText.slice(0, 200)}`
         );
       }
 
-      setData(json);
-      setSelectedFrameIndex(Math.max((json.timeline?.frames?.length ?? 1) - 1, 0));
+      const payload = json as SurfaceResponse;
+      setData(payload);
+      setSelectedFrameIndex(Math.max((payload.timeline?.frames?.length ?? 1) - 1, 0));
       setIsPlaying(false);
     } catch (err: unknown) {
       const message =
         err instanceof Error && err.message === "Failed to fetch"
-          ? `Could not reach volatility API at ${API_BASE}. Make sure the FastAPI backend is running.`
+          ? `Could not reach volatility API${API_BASE ? ` at ${API_BASE}` : ""}. The backend may be down.`
           : err instanceof Error
             ? err.message
             : "Unknown error";
