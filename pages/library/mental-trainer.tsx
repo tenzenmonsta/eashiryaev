@@ -40,7 +40,7 @@ const MODE_META: Record<Mode, { label: string; hint: string }> = {
   multiply: { label: "× Multiplication", hint: "1–100 × 1–100" },
   divide: {
     label: "÷ Division",
-    hint: "1–1000 ÷ 1–1000 (answer to 5 decimals)",
+    hint: "1–100 ÷ 1–100 (answer to 5 decimals)",
   },
   weekday: { label: "📅 Weekday", hint: "name the day of a random date" },
 };
@@ -56,8 +56,8 @@ function makeMultiply(): MultiplyQ {
 }
 
 function makeDivide(): DivideQ {
-  const a = randInt(1, 1000);
-  const b = randInt(1, 1000);
+  const a = randInt(1, 100);
+  const b = randInt(1, 100);
   return { mode: "divide", a, b, answer: a / b };
 }
 
