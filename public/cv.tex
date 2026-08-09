@@ -1,39 +1,37 @@
 \documentclass[10pt]{article}
 
 % ---------- Page ----------
-\usepackage[a4paper, left=1.35cm, right=1.35cm, top=1.15cm, bottom=1.25cm]{geometry}
+\usepackage[a4paper, left=1.35cm, right=1.35cm, top=1.1cm, bottom=1.1cm]{geometry}
 \pagenumbering{gobble}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
 \usepackage{fontawesome5}
 
-
 % ---------- Font / symbols ----------
 \usepackage[T1]{fontenc}
-\usepackage{charter} % очень похоже по ощущению на референс
+\usepackage{charter} % close to reference feel
 \usepackage{microtype}
 
 % ---------- Links ----------
 \usepackage[colorlinks=true, urlcolor=blue, linkcolor=black]{hyperref}
-
 
 % ---------- Layout ----------
 \usepackage{tabularx}
 \usepackage{array}
 \usepackage{enumitem}
 \usepackage{titlesec}
+\usepackage{amsmath}
 
 % ---------- Lists ----------
-\setlist[itemize]{leftmargin=1.2em, itemsep=2pt, topsep=2pt}
-\renewcommand\labelitemi{\raisebox{0.2ex}{\tiny$\circ$}} % кружок как в рефе
+\setlist[itemize]{leftmargin=1.2em, itemsep=1.5pt, topsep=2pt}
+\renewcommand\labelitemi{\raisebox{0.2ex}{\tiny$\circ$}} % circle bullet
 
 % ---------- Section styling ----------
 \titleformat{\section}{\scshape\large}{}{0pt}{}[\vspace{-2pt}\hrule]
-\titlespacing{\section}{0pt}{10pt}{6pt}
+\titlespacing{\section}{0pt}{8pt}{5pt}
 
 % ---------- Small helpers ----------
 \newcommand{\smallit}[1]{{\small\textit{#1}}}
-\newcommand{\sep}{\hspace{10pt}\textbullet\hspace{10pt}}
 
 % row: left title + right (location/date)
 \newcommand{\rrow}[2]{%
@@ -41,7 +39,6 @@
     #1 & #2\\%
   \end{tabularx}%
 }
-
 % role line: left role + right date range italic
 \newcommand{\rrole}[2]{%
   \rrow{{\small #1}}{{\smallit{#2}}}%
@@ -49,19 +46,12 @@
 
 \begin{document}
 
-% ---------- Header block (1:1 layout) ----------
-% left contacts | centered name+location | right contacts
-% ---------- Header block (1:1 layout) ----------
-% left contacts | centered name+location | right contacts
+% ---------- Header ----------
 \begin{tabularx}{\textwidth}{@{}X c X@{}}
 \begin{minipage}[t]{0.33\textwidth}
 {\small
-{\small
-{\small
 \faEnvelope\ \href{mailto:egorsar2013@mail.ru}{egorsar2013@mail.ru}\\
 \faGithub\ \href{https://github.com/tenzenmonsta}{github.com/tenzenmonsta}
-}
-}
 }
 \end{minipage}
 &
@@ -74,79 +64,83 @@
 \begin{minipage}[t]{0.33\textwidth}
 \raggedleft
 {\small
-{\small
 \faTelegram\ \href{https://t.me/eashiryaev}{t.me/eashiryaev}
-}
 }
 \end{minipage}
 \end{tabularx}
 
-\vspace{6pt}
+\vspace{4pt}
 % ---------- Summary ----------
 \section*{Summary}
-\textbf{Quantitative Researcher} with strong interest in statistical modeling, time series analysis, and systematic trading strategies. Focused on quantitative research workflows, factor modeling, and development of robust backtesting and market data analysis tools.
-
-
-% ---------- Experience ----------
-\section*{Experience}
-
-% --- Company
-\rrow{\textbf{GYI}}{Moscow, Russia}
-\rrole{Data Analyst}{October 2025 --- Present}
-\begin{itemize}
-  \item Collected, cleaned, and structured large-scale financial and transaction datasets for internal analytics.
-  \item Analyzed incoming payment flows to identify patterns, anomalies, and key revenue drivers.
-  \item Built analytical reports and dashboards supporting operational and financial decision-making.
-  \item Assisted in budget planning and forecasting based on historical transaction data and trend analysis.
-\end{itemize}
-
-
-
+\textbf{Quantitative Researcher / Trader} building volatility models and backtested systematic strategies in Python. Strong foundation in probability, statistics, and stochastic calculus; comfortable taking a research idea from hypothesis through leakage-aware validation.
 
 % ---------- Education ----------
 \section*{Education}
 
-\rrow{\textbf{Bauman Moscow State Technical University}}{Moscow, Russia}
-\rrole{B.Sc. in Robotics and Mechanical Engineering (SM-9)}{2020 --- 2025}
+\rrow{\textbf{Moscow Automobile and Road Construction State Technical University (MADI)}}{Moscow, Russia}
+{2025 --- Present}
 \begin{itemize}
-  \item Engineering and mathematical training with focus on modeling, control systems, and data analysis.
+  \item Relevant coursework: [mathematics, mechanics, engineering systems -- adjust to your program].
+\end{itemize}
+
+\rrow{\textbf{Bauman Moscow State Technical University}}{Moscow, Russia}
+\rrole{Studies in Robotics and Mechanical Engineering (SM-9)}{2020 --- 2025}
+\begin{itemize}
   \item Relevant coursework: Higher Mathematics, Probability Theory, Linear Algebra, Mechanics, Algorithms.
 \end{itemize}
 
+% ---------- Additional Education ----------
 \section*{Additional Education}
 
-\rrow{\textbf{MSU–VTB Vega Institute}}{Moscow, Russia}
-\rrole{Advanced Program in Financial Mathematics}{2025 --- Present}
+\rrow{\textbf{MSU--VTB Vega Institute} --- Advanced Program in Financial Mathematics}{2025 --- Present}
 \begin{itemize}
-  \item Coursework includes derivatives pricing, stochastic calculus, and quantitative risk modeling.
-  \item Studied Black--Scholes framework, Brownian motion, It\^o processes, and martingale methods.
+  \item Derivatives pricing, stochastic calculus, quantitative risk modeling; Black--Scholes, Brownian motion, It\^o processes, martingale methods.
 \end{itemize}
 
-\rrow{\textbf{Quantitative Research Course}}{Moscow, Russia}
-\rrole{\href{https://quant.courses/}{quant.courses}}{Oct 2025 -- Dec 2025}
+\rrow{\textbf{Quantitative Research Course} --- \href{https://quant.courses/}{quant.courses}}{Oct --- Dec 2025}
 \begin{itemize}
-  \item Training in quantitative research and systematic trading fundamentals.
-  \item Strategy development workflow: data preparation, hypothesis testing, validation.
-  \item Implemented educational trading strategy with backtesting and cross-validation.
+  \item Systematic trading research workflow (data preparation, hypothesis testing, validation); capstone project is the systematic strategy below.
 \end{itemize}
 
-\rrow{\textbf{Moscow Automobile and Road Construction State Technical University (MADI)}}{Moscow, Russia}
-\rrole{Engineering Studies}{2025 --- Present}
+% ---------- Awards ----------
+\section*{Competitions}
 \begin{itemize}
-  \item Faculty of Road and Technological Machines.
-  \item Coursework includes mathematics, mechanics, and engineering systems.
+  \item \textbf{International Mathematics Competition for University Students (IMC)}
 \end{itemize}
 
+% ---------- Projects ----------
+\section*{Projects}
 
+\rrow{\textbf{Volatility Surface Builder} \; \smallit{Python, FastAPI, Docker, scipy, Plotly}}{\href{https://github.com/tenzenmonsta/Volatility-Surface-Builder}{GitHub}}
+\begin{itemize}
+  \item Built a Dockerized FastAPI backend that pulls live option chains via yfinance and reconstructs implied-volatility surfaces by non-parametric interpolation (\texttt{scipy.griddata}, linear with nearest-neighbor fallback) on a 40$\times$40 grid, served through an interactive Plotly frontend.
+  \item Estimated the forward per expiry from put-call parity ($F = K + (C-P)/e^{-rT}$) and worked in forward log-moneyness $k_{fwd}=\ln(K/F)$; cleaned chains by bid-ask spread and adaptive IV-quantile filters, restricting to OTM options with $|k_{fwd}|\le 0.35$, IV $\in[0.03,1.5]$.
+  \item Computed surface analytics -- skew ($\partial\sigma/\partial k$), term structure ($\partial\sigma/\partial T$), curvature ($\partial^2\sigma/\partial k^2$) -- via numerical differentiation on the fitted grid.
+\end{itemize}
+% NOTE (fill if you want): no interpolation-accuracy metric (held-out RMSE) exists in the code yet; compute one and add it here if desired.
+
+\rrow{\textbf{End-to-End Systematic Strategy} \; \smallit{Python, pandas, Tinkoff Invest API, quantstats}}{}
+\begin{itemize}
+  \item Designed a trend-following + volatility-targeting strategy (150-day trend filter, 18\% target annualized vol, 1.2$\times$ leverage cap) on an equal-weighted basket of liquid Russian blue chips (SBER, GAZP, LKOH, TATN, VTBR, NVTK, GMKN, PLZL), with additive ex-dividend price adjustment.
+  \item Backtested 2020--2024 (1248 trading days), \emph{net of a 20 bps cost per unit of turnover}: Sharpe 1.74, CAGR 25.94\%, max drawdown -17.09\%, annualized vol 13.82\% -- versus Sharpe 0.44 / max drawdown -65.93\% for the buy-and-hold benchmark (quantstats).
+  \item Used walk-forward evaluation with an embargo window between train and test (600/63/5 days) to guard against look-ahead leakage; built an order/fill/NAV simulator to emulate paper-trading execution.
+\end{itemize}
+
+% ---------- Experience ----------
+\section*{Experience}
+
+\rrow{\textbf{GYI} --- Data Analyst}{Moscow, Russia \; \smallit{Oct 2025 --- Present}}
+\begin{itemize}
+  \item Built financial and transaction data pipelines (collection, cleaning, structuring of large-scale datasets); analyzed payment flows to surface patterns, anomalies, and key revenue drivers.
+  \item Built analytical reports and dashboards supporting operational and financial decisions.
+\end{itemize}
 
 % ---------- Skills ----------
 \section*{Skills}
-
 \begin{itemize}
 \item \textbf{Languages:} Python, C++
-\item \textbf{Data Analysis:} Polars, Pandas, NumPy, Scikit-learn, Matplotlib, PyTorch
-\item \textbf{Quant Tools:} Backtesting, Time Series Analysis, Data Processing
-
+\item \textbf{Data \& ML:} Polars, Pandas, NumPy, SciPy, Scikit-learn, PyTorch, Matplotlib
+\item \textbf{Quant:} Backtesting, Walk-Forward Cross-Validation, Time Series Analysis, Derivatives Pricing, Statistical Modeling
 \end{itemize}
 
 \end{document}
