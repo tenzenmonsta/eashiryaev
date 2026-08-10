@@ -1,0 +1,444 @@
+\documentclass[12pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\newcommand{\dd}{\,\mathrm{d}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdd}[2]{\frac{\partial^2 #1}{\partial #2^2}}
+
+\title{Black--Scholes Derivation}
+\author{Egor Shiryaev}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Unhedged Portfolio}
+
+Let the price of the underlying asset $S_t$ be a random process,
+and denote the value of the derivative instrument by $V(S,t)$.
+
+Consider a portfolio consisting of a long position in the derivative instrument
+and a short position in the underlying asset. At this stage, we treat the
+portfolio as unhedged.
+
+Portfolio value:
+\begin{equation}
+\Pi_t = V(S_t,t) - S_t.
+\end{equation}
+
+Change in portfolio value:
+\begin{equation}
+\dd \Pi_t = \dd V(S_t,t) - \dd S_t.
+\end{equation}
+
+\section{Dynamics of the Underlying Asset}
+
+Assume the stock price follows geometric Brownian motion:
+\begin{equation}
+\dd S_t = \mu S_t \dd t + \sigma S_t \dd W_t,
+\end{equation}
+where $\mu$ is the drift, $\sigma$ is the volatility,
+and $W_t$ is a Wiener process.
+
+Thus the random component introduces uncertainty into our portfolio through the
+short position in the underlying asset and the long position in the derivative
+instrument.
+
+\section{Dynamics of the Derivative Instrument}
+
+It\^o's lemma lets us find the differential of a function depending on time
+and a stochastic process:
+\begin{equation}
+\dd V = \pd{V}{t}\dd t + \pd{V}{S}\dd S + \frac{1}{2}\pdd{V}{S}(\dd S)^2.
+\end{equation}
+
+We take the small change in the value of our stock derivative to be given by
+expression (4).
+
+Let us find $(\dd S)^2$ from the price dynamics:
+\[
+(\dd S)^2 = (\mu S \dd t + \sigma S \dd W)^2.
+\]
+
+Expanding:
+\[
+(\dd S)^2 =
+\mu^2 S^2 \dd t^2
++ 2\mu\sigma S^2 \dd t\,\dd W
++ \sigma^2 S^2 (\dd W)^2.
+\]
+
+Using the rules of stochastic calculus:
+\[
+(\dd W)^2=\dd t,\qquad
+\dd W\,\dd t=0,\qquad
+\dd t^2=0,
+\]
+we obtain:
+\begin{equation}
+(\dd S)^2=\sigma^2 S^2 \dd t.
+\end{equation}
+
+Substituting:
+\begin{equation}
+\dd V =
+\pd{V}{t}\dd t
++ \pd{V}{S}(\mu S \dd t + \sigma S \dd W)
++ \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}\dd t.
+\end{equation}
+
+\section{Source of Randomness}
+
+At first glance, it may seem that two terms in the equation introduce an
+element of randomness into the change in the derivative's value:
+\[
+\frac{1}{2}\frac{\partial^2 V}{\partial S^2}(\dd S)^2,
+\qquad
+\frac{\partial V}{\partial S}\dd S.
+\]
+
+Consider the first term. Using the relation
+\[
+(\dd S)^2=\sigma^2 S^2 \dd t,
+\]
+which follows from It\^o's formula (see (4)--(5)), we find that this term is
+of order $\dd t$ and is therefore deterministic.
+
+The second term contains the increment of the process $S_t$. Substituting
+the underlying asset's dynamics
+\[
+\dd S = \mu S \dd t + \sigma S \dd W,
+\]
+we see that this is precisely where the stochastic term arises,
+proportional to $\dd W$.
+
+Thus, the sole source of randomness in the dynamics of the derivative's
+value is the term
+\[
+\sigma S \frac{\partial V}{\partial S}\dd W.
+\]
+
+\section{Introducing the Hedge}
+
+Since the unhedged portfolio remains random, we can choose the number of
+shares so as to eliminate the stochastic term.
+
+Introduce the number of shares $\Delta_t$ and consider the portfolio:
+\[
+\Pi_t = V(S_t,t) - \Delta_t S_t.
+\]
+
+Then:
+\[
+\dd \Pi_t = \dd V - \Delta_t \dd S_t.
+\]
+
+Substituting the expressions:
+\[
+\dd \Pi =
+\Bigl(\pd{V}{t} + \mu S \pd{V}{S} + \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}\Bigr)\dd t
++ \sigma S \pd{V}{S}\dd W
+- \Delta_t(\mu S\dd t + \sigma S\dd W).
+\]
+
+Group the random terms:
+\[
+\dd \Pi =
+\Bigl(\pd{V}{t} + \mu S \pd{V}{S}
++ \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}
+- \Delta_t\mu S\Bigr)\dd t
++ \sigma S(\pd{V}{S}-\Delta_t)\dd W.
+\]
+
+The random term vanishes when we choose
+\begin{equation}
+\Delta_t=\pd{V}{S}.
+\end{equation}
+
+This fully eliminates the stochastic risk. The portfolio becomes locally
+risk-free:
+\begin{equation}
+\dd \Pi =
+\Bigl(\pd{V}{t} + \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}\Bigr)\dd t.
+\end{equation}
+
+Since the portfolio $\Pi_t$ contains no stochastic term, its dynamics
+become deterministic. Under no-arbitrage, any risk-free portfolio must
+earn the risk-free interest rate $r$; otherwise it would be possible to
+earn a guaranteed profit without risk.
+
+Consequently, the dynamics of such a portfolio must satisfy the growth
+equation of a risk-free asset.
+
+\section{The Black--Scholes Equation}
+
+A risk-free portfolio must earn the risk-free return $r$:
+\begin{equation}
+\dd \Pi = r\Pi \dd t.
+\end{equation}
+
+Notice that the parameter $\mu$, which characterizes the stock's expected
+return, drops out of the subsequent calculations. This means the
+derivative's price does not depend on the asset's real expected return.
+Equivalently, the calculations are carried out under the risk-neutral
+measure $Q$, under which the underlying asset's dynamics take the form
+\[
+\dd S = r S \dd t + \sigma S \dd W^Q .
+\]
+
+Substituting the portfolio:
+\[
+\dd \Pi = r\bigl(V - S\pd{V}{S}\bigr)\dd t.
+\]
+
+Equating:
+\[
+\pd{V}{t} + \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}
+= r\bigl(V - S\pd{V}{S}\bigr),
+\]
+we obtain:
+\begin{equation}
+\boxed{
+\pd{V}{t}
++ \frac{1}{2}\sigma^2 S^2 \pdd{V}{S}
++ rS\pd{V}{S}
+- rV = 0
+}
+\end{equation}
+
+This is the Black--Scholes equation.
+
+\section{Closed-Form Solution}
+
+So we have obtained the Black--Scholes equation in differential form.
+What next?
+
+We often encounter the following formula:
+\[
+C = S\cdot N(d_1) - K e^{-rT} N(d_2),
+\]
+\[
+d_1 = \frac{\ln\left(\frac{S}{K}\right) + \left(r + \frac12\sigma^2\right)T}{\sigma\sqrt{T}},
+\qquad
+d_2 = d_1 - \sigma\sqrt{T}.
+\]
+
+This is the Black--Scholes formula for a European call option
+(no dividends).
+
+What does it mean: that's the first question worth asking when looking
+at this formula.
+
+We know that for the option contract to be exercised, the condition
+$(S_T - K)^+$ must hold, in other words
+\begin{equation}
+S_T - K > 0 \Rightarrow S_T > K.
+\end{equation}
+
+At this point it is worth taking the logarithm of the expression.
+We get
+\[
+\ln(S_T) - \ln(K).
+\]
+
+Now we need to go back and recall that we assumed pricing follows
+geometric Brownian motion.
+
+Under the real (physical) measure $P$, the asset's dynamics are
+\[
+\dd S = \mu S \dd t + \sigma S \dd W.
+\]
+
+However, when pricing derivatives we work under the risk-neutral
+measure $Q$, in which the asset's expected return equals the
+risk-free rate $r$. Under this measure the dynamics become
+\[
+\dd S = r S \dd t + \sigma S \dd W^Q.
+\]
+
+Integrating this equation, we get
+\[
+\ln(S_T) = \ln(S_0) + \left(r - \frac12\sigma^2\right)T + \sigma W_T.
+\]
+
+This gives:
+\[
+\ln(S_0) + \left(r - \frac12\sigma^2\right)T + \sigma W_T > \ln(K),
+\]
+then
+\[
+\ln\left(\frac{K}{S_0}\right)
+<
+\left(r - \frac12\sigma^2\right)T + \sigma W_T.
+\]
+
+Since $W_T\sim N(0,T)$, we standardize:
+\[
+W_T=\sqrt{T}\,Z, \qquad Z\sim N(0,1).
+\]
+
+Substituting:
+\[
+\ln\left(\frac{K}{S_0}\right)
+<
+\left(r - \frac12\sigma^2\right)T + \sigma\sqrt{T}Z.
+\]
+
+Then:
+\[
+\sigma\sqrt{T}Z >
+\ln\left(\frac{K}{S_0}\right)
+-
+\left(r - \frac12\sigma^2\right)T,
+\]
+\[
+Z >
+\frac{1}{\sigma\sqrt{T}}
+\left(
+\ln\left(\frac{K}{S_0}\right)
+-
+\left(r - \frac12\sigma^2\right)T
+\right).
+\]
+
+Let us pause here. Earlier we said that $Z\sim N(0,1)$.
+
+To understand this we must answer: what is $N(x)$? $N(x)=P(Z\le x)$.
+
+This is the area under the normal distribution curve to the left of
+the point $x$. In our case we want the call option to be exercised,
+so we're interested in the area to the right of the point.
+
+Denote this point by $d_2$; then
+\[
+P(Z>-d_2).
+\]
+
+Flipping the expression:
+\[
+Z >
+\frac{1}{\sigma\sqrt{T}}
+\left(
+\ln\left(\frac{S_0}{K}\right)
++
+\left(r - \frac12\sigma^2\right)T
+\right)
+= -d_2.
+\]
+
+In other words:
+\begin{equation}
+P(S_T>K)=N(d_2).
+\end{equation}
+
+Recall that we are working under the risk-neutral measure, so the
+option price is:
+\begin{equation}
+C_0=e^{-rT}\mathbb{E}^Q[(S_T-K)^+].
+\end{equation}
+
+Let's break this down further:
+\begin{equation}
+C_0=e^{-rT}\mathbb{E}^Q[S_T\mathbf{1}_{S_T>K}-K\mathbf{1}_{S_T>K}],
+\end{equation}
+
+\begin{equation}
+C_0=e^{-rT}
+\left(
+\mathbb{E}^Q[S_T\mathbf{1}_{S_T>K}]
+-
+K P(S_T>K)
+\right).
+\end{equation}
+
+We have already introduced the second part and know how to work
+with it.
+
+\[
+\mathbb{E}^Q[S_T\mathbf{1}_{S_T>K}],\qquad
+\text{and we already know how } S_T \text{ behaves:}
+\]
+\[
+S_T=S_0 e^{(r-\frac12\sigma^2)T+\sigma\sqrt{T}Z}.
+\]
+
+This immediately gives the expectation:
+\[
+S_0 e^{(r-\frac12\sigma^2)T}
+\mathbb{E}^Q\left[e^{\sigma\sqrt{T}Z}\mathbf{1}_{Z>-d_2}\right].
+\]
+
+From this we get the integral:
+\[
+\int_{-d_2}^{\infty}
+e^{\sigma\sqrt{T}z}
+\frac{1}{\sqrt{2\pi}}e^{-z^2/2}\dd z.
+\]
+
+For convenience, denote:
+\[
+\theta=\sigma\sqrt{T}.
+\]
+
+\[
+\int_{-d_2}^{\infty}
+\frac{1}{\sqrt{2\pi}}
+e^{\theta z-\frac12 z^2}\dd z.
+\]
+
+Completing the square:
+\[
+e^{\frac12\theta^2}
+\int_{-d_2-\theta}^{\infty}
+\frac{1}{\sqrt{2\pi}}e^{-q^2/2}\dd q.
+\]
+
+Substitution:
+\[
+q=z-\theta.
+\]
+
+Note that
+\[
+d_1=d_2+\sigma\sqrt{T}=d_2+\theta.
+\]
+
+Hence the lower limit of integration transforms as:
+\[
+-d_2-\theta=-d_1.
+\]
+
+Then
+\[
+\int_{-d_2-\theta}^{\infty}\phi(q)\dd q
+=
+P(Z>-d_1)=N(d_1).
+\]
+
+Finally:
+\[
+\mathbb{E}^Q[S_T\mathbf{1}_{S_T>K}]
+=
+S_0 e^{rT}N(d_1).
+\]
+
+Returning to our expression:
+\begin{equation}
+\fbox{$\displaystyle
+\begin{aligned}
+C_0 &= S_0N(d_1) - K e^{-rT}N(d_2),\\
+\text{where}\quad d_1 &= \frac{\ln\left(\frac{S_0}{K}\right) + \left(r+\frac12\sigma^2\right)T}{\sigma\sqrt{T}},\\
+d_2 &= d_1 - \sigma\sqrt{T}.
+\end{aligned}
+$}
+\end{equation}
+\end{document}

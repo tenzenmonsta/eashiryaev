@@ -27,11 +27,8 @@ export const libraryItems: LibraryItem[] = [
       en: "A hedged portfolio, Itô's lemma, eliminating the stochastic term, and deriving the Black–Scholes PDE.",
       ru: "Портфель с хеджированием, лемма Ито, устранение стохастической части и получение PDE Блэка–Шоулза.",
     },
-    // TODO(part C): after the English translation of Black_Scholes_Merton.tex is
-    // reviewed and approved, rebuild it as Black_Scholes_Merton-en.pdf and point
-    // href.en there. Until then, both languages serve the Russian original PDF.
     href: {
-      en: "/Black_Scholes_Merton.pdf",
+      en: "/Black_Scholes_Merton-en.pdf",
       ru: "/Black_Scholes_Merton.pdf",
     },
   },
@@ -50,11 +47,8 @@ export const libraryItems: LibraryItem[] = [
       en: "A concise strategy overview: data → signal → cross-validation → backtest → metrics. PDF + Jupyter notebook.",
       ru: "Краткий обзор стратегии: данные → сигнал → cross-validation → бэктест → метрики. PDF + Jupyter notebook.",
     },
-    // TODO(part C): after the English translation of quant_end-to_end.tex (source
-    // for the notebook write-up) is reviewed and approved, rebuild it as
-    // quant_end-to_end-en.pdf and point href.en there.
     href: {
-      en: "/quant_end-to_end.pdf",
+      en: "/quant_end-to_end-en.pdf",
       ru: "/quant_end-to_end.pdf",
     },
   },
